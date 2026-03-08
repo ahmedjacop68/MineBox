@@ -1,0 +1,17 @@
+#version 460 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec2 aTexPos;
+
+out vec2 TexPos;
+
+uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 model;
+uniform vec2 uvMin;
+uniform vec2 uvMax;
+
+void main()
+{
+    gl_Position = projection * view * model * vec4(aPos.x, aPos.y, aPos.z, 1.0);
+    TexPos =  mix(uvMin, uvMax, aTexPos);
+}
