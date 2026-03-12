@@ -81,7 +81,7 @@ inline void SetBlockTexture(Block &block) {
             block.texXY = glm::ivec2(48, 240);                 // sides
             block.faceTex[FACE_TOP] = glm::ivec2(128, 208);     // grass top
             block.faceTint[FACE_TOP] = glm::vec4(0.569, 0.741, 0.349, 1); //Grass top face Tint
-            block.faceTex[FACE_BOTTOM] = glm::ivec2(48, 224);  // dirt
+            block.faceTex[FACE_BOTTOM] = glm::ivec2(32, 240);  // dirt
             break;
 
         case BLOCK_DIRT:

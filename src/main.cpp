@@ -14,6 +14,94 @@
 // allocate chunk in static storage to avoid large stack allocation crash
 static Chunk testChunk;
 
+bool RaycastChunk(const Chunk& chunk, glm::vec3 Borigin, glm::vec3 dir, float maxDistance, glm::ivec3& hitBlock, BlockFace& hitFace)
+    {
+        glm::vec3 origin = Borigin + 0.01f;
+
+        glm::ivec3 block = glm::ivec3(
+            floor(origin.x),
+            floor(origin.y),
+            floor(origin.z)
+        );
+
+        glm::vec3 deltaDist = glm::vec3(
+            dir.x == 0 ? 1e30f : fabs(1.0f / dir.x),
+            dir.y == 0 ? 1e30f : fabs(1.0f / dir.y),
+            dir.z == 0 ? 1e30f : fabs(1.0f / dir.z)
+        );
+
+        glm::ivec3 step;
+        glm::vec3 sideDist;
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (dir[i] < 0)
+            {
+                step[i] = -1;
+                sideDist[i] = (origin[i] - block[i]) * deltaDist[i];
+            }
+            else
+            {
+                step[i] = 1;
+                sideDist[i] = (block[i] + 1.0f - origin[i]) * deltaDist[i];
+            }
+        }
+
+        float dist = 0.0f;
+
+        for (int i = 0; i < 128; i++)
+        {
+            int axis;
+
+            if (sideDist.x < sideDist.y && sideDist.x < sideDist.z)
+                axis = 0;
+            else if (sideDist.y < sideDist.z)
+                axis = 1;
+            else
+                axis = 2;
+
+            block[axis] += step[axis];
+            dist = sideDist[axis];
+            sideDist[axis] += deltaDist[axis];
+
+            if (block.x < 0 || block.x >= CHUNK_SIZE_X ||
+                block.y < 0 || block.y >= CHUNK_SIZE_Y ||
+                block.z < 0 || block.z >= CHUNK_SIZE_Z)
+                continue;
+
+            Block b = chunk.GetBlock(block.x, block.y, block.z);
+
+            if (b.id != BLOCK_AIR)
+            {
+                hitBlock = block;
+
+                if (axis == 0)
+                    hitFace = (step.x > 0) ? FACE_LEFT : FACE_RIGHT;
+                else if (axis == 1)
+                    hitFace = (step.y > 0) ? FACE_BOTTOM : FACE_TOP;
+                else
+                    hitFace = (step.z > 0) ? FACE_BACK : FACE_FRONT;
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+    glm::ivec3 FaceToDirection(BlockFace face)
+        {
+            switch (face)
+            {
+                case FACE_FRONT:  return glm::ivec3(0, 0, 1);
+                case FACE_BACK:   return glm::ivec3(0, 0, -1);
+                case FACE_LEFT:   return glm::ivec3(-1, 0, 0);
+                case FACE_RIGHT:  return glm::ivec3(1, 0, 0);
+                case FACE_TOP:    return glm::ivec3(0, 1, 0);
+                case FACE_BOTTOM: return glm::ivec3(0, -1, 0);
+            }
+            return glm::ivec3(0);
+        }
+
 int main(int argc, char* argv[]) {
     std::cout << "Starting main" << std::endl;
 
@@ -27,8 +115,8 @@ int main(int argc, char* argv[]) {
     Camera camera(glm::vec3(0.0f, 65.0f, 21.0f), glm::vec3(0.0f,0.0f,-1.0f), glm::vec3(0.0f,1.0f,0.0f), glm::vec3(0.0f,-1.0f,0.0f));
     
     
-    // Cube vertices (position + texcoords)
-    float vertices[] = {
+    //Vertices for a basic cube (position + texcoords)
+    float blockvertices[] = {
         // positions          // texcoords
         // Front face
         -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, // 0
@@ -66,7 +154,7 @@ int main(int argc, char* argv[]) {
         0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // 22
         -0.5f, -0.5f, -0.5f,  1.0f, 0.0f  // 23
     };
-    unsigned int indices[] = {
+    unsigned int blockindices[] = {
     // Front
     0, 1, 2,
     0, 2, 3,
@@ -90,6 +178,24 @@ int main(int argc, char* argv[]) {
     // Bottom
     20,22,21,
     20,23,22
+    };
+
+    //Vertices for the outline cube
+    float outlinevertices[] = {
+        -0.5f,-0.5f,-0.5f,
+        0.5f,-0.5f,-0.5f,
+        0.5f, 0.5f,-0.5f,
+        -0.5f, 0.5f,-0.5f,
+
+        -0.5f,-0.5f, 0.5f,
+        0.5f,-0.5f, 0.5f,
+        0.5f, 0.5f, 0.5f,
+        -0.5f, 0.5f, 0.5f
+    };
+    unsigned int outlineIndices[] = {
+        0,1, 1,2, 2,3, 3,0,
+        4,5, 5,6, 6,7, 7,4,
+        0,4, 1,5, 2,6, 3,7
     };
 
 
@@ -135,8 +241,10 @@ int main(int argc, char* argv[]) {
     }
     std::cout << "GLAD initialized OK" << std::endl;    
 
-    //Create and compile OUR SHADER!
-    Shader OURSHADER("shaders/vertex.shader", "shaders/fragment.shader"); 
+    //Create and compile the block shader
+    Shader BLOCKSHADER("shaders/block.ver", "shaders/block.frag");
+    Shader OUTLINESHADER("shaders/blockoutline.ver", "shaders/blockoutline.frag"); 
+
 
     //make the texture object
     unsigned int textureatlas;
@@ -172,27 +280,27 @@ int main(int argc, char* argv[]) {
 
 
     //Make the vertex buffer
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);  
+    unsigned int BLOCKVBO;
+    glGenBuffers(1, &BLOCKVBO);  
 
     //Make the vertex array
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
+    unsigned int BLOCKVAO;
+    glGenVertexArrays(1, &BLOCKVAO);
 
     //Make the element buffer
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);
+    unsigned int BLOCKEBO;
+    glGenBuffers(1, &BLOCKEBO);
     
     //1.Bind the vertex array so we can use it
-    glBindVertexArray(VAO);
+    glBindVertexArray(BLOCKVAO);
 
     //2.Move the vertex data to the buffer
-    glBindBuffer(GL_ARRAY_BUFFER, VBO); 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, BLOCKVBO); 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(blockvertices), blockvertices, GL_STATIC_DRAW);
 
     //3.Move the index data to the buffer
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, BLOCKEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(blockindices), blockindices, GL_STATIC_DRAW);
 
     //4.Define how OpenGL should interpret the vertex data
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
@@ -202,8 +310,38 @@ int main(int argc, char* argv[]) {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    OURSHADER.use();
-    OURSHADER.setInt("textureatlas", 0);
+    //same thing but for the block outline
+
+    //Make the vertex buffer
+    unsigned int OUTLINEVBO;
+    glGenBuffers(1, &OUTLINEVBO);  
+
+    //Make the vertex array
+    unsigned int OUTLINEVAO;
+    glGenVertexArrays(1, &OUTLINEVAO);
+
+    //Make the element buffer
+    unsigned int OUTLINEEBO;
+    glGenBuffers(1, &OUTLINEEBO);
+    
+    //1.Bind the vertex array so we can use it
+    glBindVertexArray(OUTLINEVAO);
+
+    //2.Move the vertex data to the buffer
+    glBindBuffer(GL_ARRAY_BUFFER, OUTLINEVBO); 
+    glBufferData(GL_ARRAY_BUFFER, sizeof(outlinevertices), outlinevertices, GL_STATIC_DRAW);
+
+    //3.Move the index data to the buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, OUTLINEEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(outlineIndices), outlineIndices, GL_STATIC_DRAW);
+
+    //4.Define how OpenGL should interpret the vertex data
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(2);
+
+
+    BLOCKSHADER.use();
+    BLOCKSHADER.setInt("textureatlas", 0);
 
     //Finally get 3D up and running
     glm::mat4 model = glm::mat4(1.0f);
@@ -241,6 +379,11 @@ int main(int argc, char* argv[]) {
         SDL_Event event;
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glm::ivec3 hitBlock;
+        BlockFace hitFace;
+        glm::vec3 rayDir = glm::normalize(camera.Front);
+        bool hit = RaycastChunk(testChunk, camera.Position, rayDir, 6.0f, hitBlock, hitFace);
+        
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
                 done = true;
@@ -259,6 +402,23 @@ int main(int argc, char* argv[]) {
             if (event.type == SDL_EVENT_MOUSE_MOTION)
             {
                 camera.ProcessMouseMotion(event.motion.xrel, event.motion.yrel);
+            }
+
+            if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button == SDL_BUTTON_LEFT)
+            {
+                testChunk.SetBlock(hitBlock.x, hitBlock.y, hitBlock.z, Block());
+            }
+
+            if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button == SDL_BUTTON_RIGHT)
+            {
+                glm::ivec3 dir = FaceToDirection(hitFace);
+                glm::ivec3 placePos = hitBlock + dir;
+
+                Block newBlock;
+                newBlock.id = BLOCK_COBBLESTONE;
+                SetBlockTexture(newBlock);
+
+                testChunk.SetBlock(placePos.x, placePos.y, placePos.z, newBlock);
             }
         }
 
@@ -281,16 +441,16 @@ int main(int argc, char* argv[]) {
 
         glm::mat4 view = camera.GetViewMatrix(); 
 
-        OURSHADER.use();
+        BLOCKSHADER.use();
 
         //Send the matrices to the shader for that jucicy high-end 3D graphics
-        int modelLoc = glGetUniformLocation(OURSHADER.ID, "model");
+        int modelLoc = glGetUniformLocation(BLOCKSHADER.ID, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-        int viewLoc = glGetUniformLocation(OURSHADER.ID, "view");
+        int viewLoc = glGetUniformLocation(BLOCKSHADER.ID, "view");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
-        int projectionLoc = glGetUniformLocation(OURSHADER.ID, "projection");
+        int projectionLoc = glGetUniformLocation(BLOCKSHADER.ID, "projection");
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
         //Declare all the block faces
@@ -316,8 +476,7 @@ int main(int argc, char* argv[]) {
         //DRAWING YAYAYAYAYA
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureatlas);
-        glBindVertexArray(VAO);
-        glBindVertexArray(VAO);
+        glBindVertexArray(BLOCKVAO);
         for (int x = 0; x < CHUNK_SIZE_X; x++)
         for (int y = 0; y < CHUNK_SIZE_Y; y++)
         for (int z = 0; z < CHUNK_SIZE_Z; z++) {
@@ -326,7 +485,7 @@ int main(int argc, char* argv[]) {
             if (block.id == BLOCK_AIR) continue;
 
             glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(x, y, z));
-            OURSHADER.setMat4("model", model);
+            BLOCKSHADER.setMat4("model", model);
 
             for (int i = 0; i < 6; i++) {
                 BlockFace face = faces[i];
@@ -336,10 +495,10 @@ int main(int argc, char* argv[]) {
 
                 //Send texture XY pos to vertex shader
                 glm::ivec2 tex = block.GetFaceTexXY(face);
-                OURSHADER.setVec2("uvMin", block.GetUVMin(tex));
-                OURSHADER.setVec2("uvMax", block.GetUVMax(tex));
+                BLOCKSHADER.setVec2("uvMin", block.GetUVMin(tex));
+                BLOCKSHADER.setVec2("uvMax", block.GetUVMax(tex));
                 //Apply Block Tint
-                OURSHADER.setVec4("BlockTint", block.faceTint[face]);
+                BLOCKSHADER.setVec4("BlockTint", block.faceTint[face]);
 
                 glDrawElements(
                     GL_TRIANGLES,
@@ -349,6 +508,20 @@ int main(int argc, char* argv[]) {
                 );
             }
         }
+        //Draw the block outline now
+        glBindVertexArray(OUTLINEVAO);
+
+        glm::mat4 model = glm::translate(glm::mat4(1.0f),
+                                        glm::vec3(hitBlock));
+
+        model = glm::scale(model, glm::vec3(1.002f)); // slightly larger
+
+        OUTLINESHADER.use();
+        OUTLINESHADER.setMat4("model", model);
+        OUTLINESHADER.setMat4("view", view);
+        OUTLINESHADER.setMat4("projection", projection);
+
+        glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
         SDL_GL_SwapWindow(window);
     }
 
