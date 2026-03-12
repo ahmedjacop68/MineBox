@@ -1,3 +1,5 @@
+SHELL := cmd.exe
+
 CXX = g++
 CC  = gcc
 
