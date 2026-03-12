@@ -1,6 +1,21 @@
 CXX = g++
 CC  = gcc
 
+# Detect OS and set commands
+ifeq ($(OS),Windows_NT)
+    CP_DIR = xcopy /E /I /Y
+    CP_FILE = copy /Y
+    RM = del /Q
+    RM_DIR = rd /S /Q
+    EXE = mineBox.exe
+else
+    CP_DIR = cp -r
+    CP_FILE = cp
+    RM = rm -f
+    RM_DIR = rm -rf
+    EXE = mineBox
+endif
+
 CXXFLAGS = -I ../include
 CFLAGS   = -I ../include
 
@@ -24,9 +39,16 @@ $(OUT): $(OBJS) resources
 	$(CXX) $(OBJS) -o $@ $(LDFLAGS) $(LIBS)
 
 resources:
-	cp -r $(SHADERS_SRC) $(SHADERS_DEST)
-	cp $(SDL_DLL_SRC) .
-	cp $(TERRAIN_SRC) .
+ifeq ($(OS),Windows_NT)
+	if not exist $(SHADERS_DEST) mkdir $(SHADERS_DEST)
+	$(CP_DIR) $(subst /,\,$(SHADERS_SRC)) $(subst /,\,$(SHADERS_DEST))
+	$(CP_FILE) $(subst /,\,$(SDL_DLL_SRC)) .
+	$(CP_FILE) $(subst /,\,$(TERRAIN_SRC)) .
+else
+	$(CP_DIR) $(SHADERS_SRC) $(SHADERS_DEST)
+	$(CP_FILE) $(SDL_DLL_SRC) .
+	$(CP_FILE) $(TERRAIN_SRC) .
+endif
 
 main.o: ../src/main.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
