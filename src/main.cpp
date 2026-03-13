@@ -328,6 +328,8 @@ int main(int argc, char* argv[]) {
 
         //Get keyboard input and process it
         const bool* keys = SDL_GetKeyboardState(NULL);
+        if(keys[SDL_SCANCODE_ESCAPE])
+          done = true;
         camera.ProcessInput(keys, deltaTime);
 
 
