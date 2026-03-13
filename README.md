@@ -6,10 +6,18 @@ This is a clone of minecraft Beta 1.7.3 made in SDL and OpenGL, Unlike other clo
 * Inspired by CavEX and hatred for minecraft bedrock edition
 
 ## How to compile
-Currently MineBox is very early on in development, There is only a fly camera and a test chunk, and placing and breaking blocks, No lighting, No nothing, But if you want to try it out for some reason, This is for you:
+Currently MineBox is very early on in development, There is only a fly camera and a test chunk, and placing and breaking blocks, No lighting, No nothing, But if you want to try it out for some reason, and you are a windows user, This is for you:
 * 1: Have MineGW installed on your PC
 * 2: Clone this repostory
 * 3: Go to the build folder (Under powershell if using windows) and run:
 ```
 make
 ```
+## TO DO
+* Add lighting
+* Text rendering
+* Loading beta 1.7.3 worlds and saving
+* Water/Lava physics
+* Proper survival mode
+* maybe ability to join beta 1.7.3 servers? MAYBEEE possiblyyyyyyyy
+* Main menu
