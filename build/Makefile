@@ -26,7 +26,7 @@ LIBS = -lSDL3 -lopengl32
 
 OUT = mineBox.exe
 
-OBJS = main.o glad.o stb.o chunk.o camera.o
+OBJS = main.o glad.o stb.o chunk.o camera.o raycast.o object.o
 
 SHADERS_SRC = ../src/shaders
 SHADERS_DEST = shaders
@@ -65,6 +65,12 @@ camera.o: ../src/camera.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 chunk.o: ../src/chunk.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+raycast.o: ../src/raycast.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+object.o: ../src/object.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
