@@ -53,18 +53,18 @@ public:
         vertex = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertex, 1, &vShaderCode, NULL);
         glCompileShader(vertex);
-        checkCompileErrors(vertex, "VERTEX");
+        checkCompileErrors(vertex, ShaderType::VERTEX_SHADER);
         // fragment Shader
         fragment = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragment, 1, &fShaderCode, NULL);
         glCompileShader(fragment);
-        checkCompileErrors(fragment, "FRAGMENT");
+        checkCompileErrors(fragment, ShaderType::FRAGMENT_SHADER);
         // shader Program
         ID = glCreateProgram();
         glAttachShader(ID, vertex);
         glAttachShader(ID, fragment);
         glLinkProgram(ID);
-        checkCompileErrors(ID, "PROGRAM");
+        checkLinkErrors(ID);
         // delete the shaders as they're linked into our program now and no longer necessary
         glDeleteShader(vertex);
         glDeleteShader(fragment);
@@ -136,30 +136,49 @@ public:
     }
 
 private:
-    // utility function for checking shader compilation/linking errors.
+    enum class ShaderType
+    {
+        VERTEX_SHADER,
+        FRAGMENT_SHADER
+    };
+
+    // utility functions for checking shader compilation/linking errors.
     // ------------------------------------------------------------------------
-    void checkCompileErrors(GLuint shader, std::string type)
+
+    void checkCompileErrors(GLuint shader, ShaderType type)
     {
         GLint success;
         GLchar infoLog[1024];
-        if (type != "PROGRAM")
+        if (type == ShaderType::VERTEX_SHADER)
         {
             glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
             if (!success)
             {
                 glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-                std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+                std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: VERTEX\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
             }
         }
-        else
+        else if (type == ShaderType::FRAGMENT_SHADER)
         {
-            glGetProgramiv(shader, GL_LINK_STATUS, &success);
+            glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
             if (!success)
             {
-                glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-                std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+                glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+                std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: FRAGMENT\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
             }
         }
+    }
+
+    void checkLinkErrors(GLuint program)
+    {
+        GLint success;
+        GLchar infoLog[1024];
+        glGetProgramiv(program, GL_LINK_STATUS, &success);
+            if (!success)
+            {
+                glGetProgramInfoLog(program, 1024, NULL, infoLog);
+                std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: PROGRAM\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+            }
     }
 };
 #endif
