@@ -12,6 +12,7 @@
 #include <block/block.h>
 #include <raycast/raycast.hpp>
 #include <object/object.hpp>
+#include <font/font.hpp>
 
 // allocate chunk in static storage to avoid large stack allocation crash
 static Chunk testChunk;
@@ -119,8 +120,8 @@ int main(int argc, char* argv[]) {
     std::cout << "SDL Init OK" << std::endl;
 
     //Configure the window
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
     //Create an application window with the following settings:
@@ -159,6 +160,7 @@ int main(int argc, char* argv[]) {
     //Create and compile the block shader
     Shader BLOCKSHADER("shaders/block.ver", "shaders/block.frag");
     Shader OUTLINESHADER("shaders/blockoutline.ver", "shaders/blockoutline.frag"); 
+    Shader FONTSHADER("shaders/font.ver", "shaders/font.frag");
 
 
     //make the texture object
@@ -169,7 +171,7 @@ int main(int argc, char* argv[]) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textureatlas);
     int width, height, nrChannels;
-    unsigned char *data = stbi_load("terrain.png", &width, &height, &nrChannels, 0); 
+    unsigned char *data = stbi_load("assets/terrain.png", &width, &height, &nrChannels, 0); 
     if (!data) {
         SDL_Log("Failed to load terrain.png");
         return -1;
@@ -192,6 +194,40 @@ int main(int argc, char* argv[]) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
     stbi_image_free(data);
+
+    //make the texture object
+    unsigned int fonttexture;
+    glGenTextures(1, &fonttexture);  
+
+    //load the texture
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, fonttexture);
+    unsigned char *fontdata = stbi_load("assets/font/default.png", &width, &height, &nrChannels, 0); 
+    if (!fontdata) {
+        SDL_Log("Failed to load font");
+        return -1;
+    }
+  
+
+    //Configure our tex so we can use it
+    glBindTexture(GL_TEXTURE_2D, fonttexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    //Generate the texture
+    glBindTexture(GL_TEXTURE_2D, fonttexture); 
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, fontdata);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(fontdata);
+
+    //init the text renderer
+    TextRenderer FPS = FONTSHADER.inittext(fonttexture);
 
 
     //Make the vertex buffer
@@ -270,6 +306,15 @@ int main(int argc, char* argv[]) {
 
     //Lock the mouse to the middle
     SDL_SetWindowRelativeMouseMode(window, true);
+
+    //Enable The Alpha Channel
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    //FPS tracking
+    Uint32 lastTime = SDL_GetTicks(), currentTime;
+    int frameCount = 0;
+    int currentFPS = 0;
 
     //Main loop
     while (!done) {
@@ -419,6 +464,25 @@ int main(int argc, char* argv[]) {
         OUTLINESHADER.setMat4("projection", projection);
 
         glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
+
+        //track fps
+        frameCount++;
+        currentTime = SDL_GetTicks();
+        if (currentTime > lastTime + 1000) {
+            currentFPS = frameCount;
+            frameCount = 0;
+            lastTime = currentTime;
+        }
+
+        // Render some text
+        glDisable(GL_DEPTH_TEST); 
+        FONTSHADER.use();
+        glm::mat4 projection2D = glm::ortho(0.0f, (float)Width, 0.0f, (float)Height);
+        FONTSHADER.setMat4("projection", projection2D);
+        FPS.RenderText("Minebox Alpha 0.01: Impl: Beta 1.7.3", 0, 1056, 3.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+        FPS.RenderText("FPS: " + std::to_string(currentFPS), 0, 1032, 3.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+        glEnable(GL_DEPTH_TEST); 
+
         SDL_GL_SwapWindow(window);
     }
 

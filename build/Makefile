@@ -31,7 +31,8 @@ OBJS = main.o glad.o stb.o chunk.o camera.o raycast.o object.o
 SHADERS_SRC = ../src/shaders
 SHADERS_DEST = shaders
 SDL_DLL_SRC = ../src/SDL3.dll
-TERRAIN_SRC = ../src/terrain.png
+ASSETS_SRC = ../src/assets
+ASSETS_DEST = assets
 
 .PHONY: all clean resources
 
@@ -45,11 +46,11 @@ ifeq ($(OS),Windows_NT)
 	if not exist $(SHADERS_DEST) mkdir $(SHADERS_DEST)
 	$(CP_DIR) $(subst /,\,$(SHADERS_SRC)) $(subst /,\,$(SHADERS_DEST))
 	$(CP_FILE) $(subst /,\,$(SDL_DLL_SRC)) .
-	$(CP_FILE) $(subst /,\,$(TERRAIN_SRC)) .
+	$(CP_DIR) $(subst /,\,$(ASSETS_SRC)) $(subst /,\,$(ASSETS_DEST))
 else
 	$(CP_DIR) $(SHADERS_SRC) $(SHADERS_DEST)
 	$(CP_FILE) $(SDL_DLL_SRC) .
-	$(CP_FILE) $(TERRAIN_SRC) .
+	$(CP_DIR) $(ASSETS_SRC) $(ASSETS_DEST)
 endif
 
 main.o: ../src/main.cpp
@@ -75,4 +76,4 @@ object.o: ../src/object.cpp
 
 clean:
 	rm -f *.o $(OUT)
-	rm -rf $(SHADERS_DEST) SDL3.dll terrain.png
+	rm -rf $(SHADERS_DEST) SDL3.dll $(ASSETS_DEST)
