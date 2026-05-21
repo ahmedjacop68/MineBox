@@ -14,8 +14,9 @@ Currently MineBox is very early on in development, There is only a fly camera an
 make
 ```
 ## TO DO
-* Add lighting
-* Text rendering
+* ~~Add lighting~~
+* Smooth crim- i mean lighting
+* ~~Text rendering~~
 * Loading beta 1.7.3 worlds and saving
 * Water/Lava physics
 * Proper survival mode

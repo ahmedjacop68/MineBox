@@ -33,42 +33,42 @@ int main(int argc, char* argv[]) {
     
     //Vertices for a basic cube (position + texcoords)
     float blockvertices[] = {
-        // positions          // texcoords
+        // positions          // texcoords // normals
         // Front face
-        -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, // 0
-        0.5f, -0.5f,  0.5f,  1.0f, 1.0f, // 1
-        0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // 2
-        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, // 3
+        -0.5f, -0.5f,  0.5f,  0.0f, 1.0f,  0.0f, 0.0f, 1.0f,  // 0
+        0.5f, -0.5f,  0.5f,  1.0f, 1.0f,  0.0f, 0.0f, 1.0f,   // 1
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,   // 2
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,  0.0f, 0.0f, 1.0f,  // 3
 
         // Back face
-        -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // 4
-        0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // 5
-        0.5f,  0.5f, -0.5f,  0.0f, 0.0f, // 6
-        -0.5f,  0.5f, -0.5f,  1.0f, 0.0f, // 7
+        -0.5f, -0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, -1.0f,  // 4
+        0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  0.0f, 0.0f, -1.0f,   // 5
+        0.5f,  0.5f, -0.5f,  0.0f, 0.0f,  0.0f, 0.0f, -1.0f,   // 6
+        -0.5f,  0.5f, -0.5f,  1.0f, 0.0f,  0.0f, 0.0f, -1.0f,  // 7
 
         // Left face
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // 8
-        -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, // 9
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // 10
-        -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, // 11
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,  -1.0f, 0.0f, 0.0f,   // 8
+        -0.5f, -0.5f,  0.5f,  1.0f, 1.0f,  -1.0f, 0.0f, 0.0f,   // 9
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  -1.0f, 0.0f, 0.0f,   // 10
+        -0.5f,  0.5f, -0.5f,  0.0f, 0.0f,  -1.0f, 0.0f, 0.0f,   // 11
 
         // Right face
-        0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // 12
-        0.5f, -0.5f,  0.5f,  0.0f, 1.0f, // 13
-        0.5f,  0.5f,  0.5f,  0.0f, 0.0f, // 14
-        0.5f,  0.5f, -0.5f,  1.0f, 0.0f, // 15
+        0.5f, -0.5f, -0.5f,  1.0f, 1.0f,  1.0f, 0.0f, 0.0f,     // 12
+        0.5f, -0.5f,  0.5f,  0.0f, 1.0f,  1.0f, 0.0f, 0.0f,     // 13
+        0.5f,  0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 0.0f,     // 14
+        0.5f,  0.5f, -0.5f,  1.0f, 0.0f,  1.0f, 0.0f, 0.0f,     // 15
 
         // Top face
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, // 16
-        0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // 17
-        0.5f,  0.5f, -0.5f,  1.0f, 0.0f, // 18
-        -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, // 19
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,  0.0f, 1.0f, 0.0f,    // 16
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f, 1.0f, 0.0f,     // 17
+        0.5f,  0.5f, -0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 0.0f,     // 18
+        -0.5f,  0.5f, -0.5f,  0.0f, 0.0f,  0.0f, 1.0f, 0.0f,    // 19
 
         // Bottom face
-        -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, // 20
-        0.5f, -0.5f,  0.5f,  0.0f, 1.0f, // 21
-        0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // 22
-        -0.5f, -0.5f, -0.5f,  1.0f, 0.0f  // 23
+        -0.5f, -0.5f,  0.5f,  1.0f, 1.0f,  0.0f, -1.0f, 0.0f,   // 20
+        0.5f, -0.5f,  0.5f,  0.0f, 1.0f,  0.0f, -1.0f, 0.0f,    // 21
+        0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  0.0f, -1.0f, 0.0f,    // 22
+        -0.5f, -0.5f, -0.5f,  1.0f, 0.0f,   0.0f, -1.0f, 0.0f    // 23
     };
     unsigned int blockindices[] = {
     // Front
@@ -245,12 +245,16 @@ int main(int argc, char* argv[]) {
     InitVertex(BLOCKVBO, BLOCKVAO, BLOCKEBO, blockvertices, blockindices, sizeof(blockvertices), sizeof(blockindices));
 
     //Define how OpenGL should interpret the vertex data
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     //Define how OpenGL should interpret the texture coords
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    //Define how OpenGL should interpret the normals
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+    glEnableVertexAttribArray(4);
 
     //same thing but for the block outline
 
